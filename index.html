@@ -3,39 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RPG Pokémon Manager</title>
+    <title>RPG Pokémon Manager v2</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <header>
-        <h1>Gerenciador de Fichas RPG</h1>
+        <h1>Gerenciador de Fichas RPG (PokeAPI Integration)</h1>
     </header>
 
     <main>
         <section id="capture-zone">
-            <h2>Nova Captura</h2>
+            <h2>Nova Captura via API</h2>
             <form id="pokemon-form">
-                <div class="form-group">
-                    <label>Espécie (Base Stats):</label>
-                    <select id="species-select">
-                        </select>
-                </div>
-                <div class="form-group">
-                    <label>Apelido:</label>
-                    <input type="text" id="nickname" placeholder="Ex: Marr">
-                </div>
-                <div class="form-group">
-                    <label>Nível:</label>
-                    <input type="number" id="level" value="5" min="1" max="100">
-                </div>
-                
-                <div class="checkbox-group">
-                    <label><input type="checkbox" id="is-shiny"> ✨ Shiny</label>
-                    <label><input type="checkbox" id="is-alpha"> 🌟 Alpha</label>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nome da Espécie (Inglês):</label>
+                        <input type="text" id="species-name" placeholder="Ex: pikachu, lucario" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Apelido (Opcional):</label>
+                        <input type="text" id="nickname" placeholder="Ex: Zé Raio">
+                    </div>
                 </div>
 
-                <button type="submit">Registrar Pokémon</button>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nível:</label>
+                        <input type="number" id="level" value="5" min="1" max="100" style="width: 60px;">
+                    </div>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" id="is-shiny"> ✨ Shiny</label>
+                        <label><input type="checkbox" id="is-alpha"> 🌟 Alpha</label>
+                    </div>
+                </div>
+
+                 <div class="form-group">
+                    <label>Movimentos Iniciais:</label>
+                    <div class="moves-input-grid">
+                        <input type="text" id="move1" placeholder="Move 1 (Ex: Tackle)">
+                        <input type="text" id="move2" placeholder="Move 2">
+                        <input type="text" id="move3" placeholder="Move 3">
+                        <input type="text" id="move4" placeholder="Move 4">
+                    </div>
+                </div>
+
+                <button type="submit" id="btn-submit">🔍 Buscar na API & Registrar</button>
+                <p id="loading-msg" style="display:none; color:blue;">Buscando dados na PokeAPI...</p>
             </form>
         </section>
 
