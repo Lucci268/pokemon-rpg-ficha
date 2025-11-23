@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pokémon RPG Editor</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <h1>Pokémon RPG Editor</h1>
+
+    <div class="container">
+        <div class="card">
+            <label>Nome:</label>
+            <input id="nome" type="text" />
+
+            <label>Nível:</label>
+            <input id="nivel" type="number" value="1" min="1" />
+
+            <label>Nature:</label>
+            <select id="nature"></select>
+
+            <label>HP Base:</label>
+            <input id="hp_base" type="number" />
+            <label>ATK Base:</label>
+            <input id="atk_base" type="number" />
+            <label>DEF Base:</label>
+            <input id="def_base" type="number" />
+            <label>SPATK Base:</label>
+            <input id="spatk_base" type="number" />
+            <label>SPDEF Base:</label>
+            <input id="spdef_base" type="number" />
+            <label>SPD Base:</label>
+            <input id="spd_base" type="number" />
+
+            <button onclick="calcularStats()">Calcular</button>
+        </div>
+
+        <div class="card">
+            <h3>Atributos Finais</h3>
+            <p id="final_stats"></p>
+
+            <button onclick="abrirMovimentos()">Editar Movimentos</button>
+        </div>
+    </div>
+
+    <div id="modal-movimentos" class="modal hidden">
+        <div class="modal-content">
+            <h2>Movimentos</h2>
+            <div id="lista-movimentos"></div>
+            <button onclick="addMove()">Adicionar Movimento</button>
+            <button class="close" onclick="fecharMovimentos()">Fechar</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
