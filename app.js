@@ -1,78 +1,140 @@
-const natures = {
-  Hardy: {},
-  Lonely: { atk: 20, def: -20 },
-  Brave: { atk: 20, spd: -20 },
-  Adamant: { atk: 20, spatk: -20 },
-  Naughty: { atk: 20, spdef: -20 },
-  Docile: {},
-  Bold: { def: 20, atk: -20 },
-  Modest: { spatk: 20, atk: -20 },
-  Mild: { spatk: 20, def: -20 },
-  Quiet: { spatk: 20, spd: -20 },
-  Rash: { spatk: 20, spdef: -20 },
-  Quirky: {},
-  Calm: { spdef: 20, atk: -20 },
-  Gentle: { spdef: 20, def: -20 },
-  Sassy: { spdef: 20, spd: -20 },
-  Careful: { spdef: 20, spatk: -20 }
-};
-
-const natureSelect = document.getElementById("nature");
-for (let n in natures) {
-  let opt = document.createElement("option");
-  opt.value = n;
-  opt.textContent = n;
-  natureSelect.appendChild(opt);
+// ======== CARREGAR DADOS ========
+async function loadJSON(path) {
+    const res = await fetch(path);
+    return await res.json();
 }
 
-function aplicarNature(base, nature, stat) {
-  if (!natures[nature] || !natures[nature][stat]) return base;
-  return base + natures[nature][stat];
+let movesDB = {};
+let pokeDB = {};
+let natureDB = {};
+
+// ======== FUNÇÕES DE CÁLCULO ========
+
+// Vida: HP = floor(BaseHP / 5) + 5
+function calcHP(base) {
+    return Math.floor(base / 5) + 5;
 }
 
-function calcularStats() {
-  let nature = document.getElementById("nature").value;
-
-  let hp = parseInt(document.getElementById("hp_base").value || 0);
-  let atk = parseInt(document.getElementById("atk_base").value || 0);
-  let def = parseInt(document.getElementById("def_base").value || 0);
-  let spatk = parseInt(document.getElementById("spatk_base").value || 0);
-  let spdef = parseInt(document.getElementById("spdef_base").value || 0);
-  let spd = parseInt(document.getElementById("spd_base").value || 0);
-
-  atk = aplicarNature(atk, nature, "atk");
-  def = aplicarNature(def, nature, "def");
-  spatk = aplicarNature(spatk, nature, "spatk");
-  spdef = aplicarNature(spdef, nature, "spdef");
-  spd = aplicarNature(spd, nature, "spd");
-
-  document.getElementById("final_stats").innerHTML = `
-    <strong>HP:</strong> ${hp}<br>
-    <strong>ATK:</strong> ${atk}<br>
-    <strong>DEF:</strong> ${def}<br>
-    <strong>SP ATK:</strong> ${spatk}<br>
-    <strong>SP DEF:</strong> ${spdef}<br>
-    <strong>SPD:</strong> ${spd}<br>
-  `;
+// PA = floor(SpeedBase / 10) + 3
+function calcPA(baseSpeed) {
+    return Math.floor(baseSpeed / 10) + 3;
 }
 
-function abrirMovimentos() {
-  document.getElementById("modal-movimentos").classList.remove("hidden");
+// Converte atributos ofensivos → Dados
+function atribToDice(value) {
+    if (value <= 4) return "0";
+    if (value <= 20) return "1d";
+    if (value <= 50) return "2d";
+    if (value <= 80) return "3d";
+    if (value <= 120) return "4d";
+    return "5d";
 }
 
-function fecharMovimentos() {
-  document.getElementById("modal-movimentos").classList.add("hidden");
+// Aplica aumento/diminuição da nature
+function applyNatureStat(base, natureMod) {
+    if (natureMod === "+") return Math.floor(base * 1.1);
+    if (natureMod === "-") return Math.floor(base * 0.9);
+    return base;
 }
 
-function addMove() {
-  let container = document.getElementById("lista-movimentos");
-  let div = document.createElement("div");
-  div.className = "move-item";
-  div.innerHTML = `
-    <input type="text" placeholder="Nome do Movimento" />
-    <input type="number" placeholder="Power" />
-    <input type="number" placeholder="Accuracy %" />
-    <hr>
-  `;
-  container.appendChild(div);
+// ======== RENDERIZAR FICHA ========
+function renderFicha(pokemon) {
+    const nature = natureDB[pokemon.nature] || natureDB["Hardy"];
+    const base = pokeDB[pokemon.species];
+
+    // ----- CÁLCULO DE ATRIBUTOS -----
+
+    // Aplicar modificadores de Nature
+    const atkFinal  = applyNatureStat(base.stats.attack,      nature.mods.attack);
+    const defFinal  = applyNatureStat(base.stats.defense,     nature.mods.defense);
+    const spAtkFinal = applyNatureStat(base.stats.sp_attack,  nature.mods.sp_attack);
+    const spDefFinal = applyNatureStat(base.stats.sp_defense, nature.mods.sp_defense);
+    const spdFinal   = applyNatureStat(base.stats.speed,      nature.mods.speed);
+
+    // HP e PA
+    const hp = calcHP(base.stats.hp);
+    const pa = calcPA(base.stats.speed);
+
+    // Dados por atributo
+    const diceAtk    = atribToDice(atkFinal);
+    const diceSpAtk  = atribToDice(spAtkFinal);
+
+    // Exibir + ou – segundo a nature
+    const defNature  = nature.mods.defense     === "-" ? "0 -" : "0";
+    const spAtkNature = nature.mods.sp_attack  === "+" ? `${diceSpAtk}+` : diceSpAtk;
+    const atkNature   = nature.mods.attack     === "+" ? `${diceAtk}+` : diceAtk;
+
+    // Movimentos
+    let movesHTML = "";
+    pokemon.moves.forEach(mov => {
+        if (!movesDB[mov]) return;
+        movesHTML += `
+        <li><b>${movesDB[mov].name}</b> <code>${movesDB[mov].power}</code></li>`;
+    });
+
+    // HTML Final
+    document.getElementById("ficha").innerHTML = `
+<h1>❦ Pokémon ❦</h1>
+
+<b>Nome</b><br>
+<code>${pokemon.nick} (${pokemon.species})</code><br><br>
+
+<b>Vida</b><br>
+<code>${hp}/${hp}</code><br><br>
+
+<b>Nível</b><br>
+<code>${pokemon.level}</code><br><br>
+
+<b>Tipo</b><br>
+<code>${base.types.join(", ")}</code><br><br>
+
+<b>Nature</b><br>
+<code>${pokemon.nature} (${nature.name_pt})</code><br><br>
+
+<b>Gênero</b><br>
+<code>${pokemon.gender}</code><br><br>
+
+<b>Habilidade</b><br>
+<code>${pokemon.ability}</code><br><br>
+
+<b>Item</b><br>
+<code>${pokemon.item || "Nenhum"}</code>
+
+<h2>Atributos</h2>
+<pre>
+Attack:       ${atkNature}
+Defense:      ${defNature}
+Sp. Attack:   ${spAtkNature}
+Sp. Defense:  0
+Speed:        ${spdFinal}
+PA:           ${pa}
+</pre>
+
+<h2>Movimentos</h2>
+<ul>${movesHTML}</ul>
+    `;
 }
+
+// ======== INICIALIZAÇÃO ========
+async function init() {
+    movesDB  = await loadJSON("./moves.json");
+    pokeDB   = await loadJSON("./pokemon-data.json");
+    natureDB = await loadJSON("./natures.json");
+
+    // EXEMPLO DE TESTE
+    const exemplo = {
+        nick: "Gato Maconha",
+        species: "Sprigatito",
+        level: 5,
+        nature: "Mild",
+        gender: "Fêmea",
+        ability: "Overgrow",
+        item: "???",
+        moves: ["Leafage", "Scratch", "Tail Whip"]
+    };
+
+    renderFicha(exemplo);
+}
+
+init();
+
